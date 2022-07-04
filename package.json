@@ -1,0 +1,48 @@
+{
+  "private": true,
+  "license": "MIT",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "typecheck": "tsc --noEmit -p packages/core/tsconfig.json",
+    "dev:p": "yarn workspace @components/playground dev",
+    "dev:c": "yarn workspace @components/core dev"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "npx lint-staged",
+    "pre-push": "npm run typecheck"
+  },
+  "lint-staged": {
+    "*.{js,ts,tsx}": "eslint --cache --fix"
+  },
+  "prettier": {
+    "singleQuote": true
+  },
+  "dependencies": {
+    "clsx": "1.2.0",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "react-transition-group": "4.4.2",
+    "styled-components": "5.3.5",
+    "swr": "1.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "17.0.43",
+    "@types/react": "18.0.14",
+    "@types/react-dom": "18.0.5",
+    "@types/react-transition-group": "4.4.5",
+    "@types/styled-components": "5.1.25",
+    "@typescript-eslint/eslint-plugin": "5.30.4",
+    "@typescript-eslint/parser": "5.30.4",
+    "eslint": "8.19.0",
+    "eslint-config-prettier": "8.5.0",
+    "eslint-plugin-prettier": "4.2.1",
+    "eslint-plugin-react": "7.30.1",
+    "eslint-plugin-react-hooks": "4.6.0",
+    "eslint-plugin-sort-destructure-keys": "1.4.0",
+    "prettier": "2.7.1",
+    "simple-git-hooks": "2.8.0",
+    "typescript": "4.7.4"
+  }
+}
