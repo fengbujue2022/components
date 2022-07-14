@@ -12,6 +12,12 @@
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\""
   },
+  "simple-git-hooks": {
+    "pre-commit": "pnpm run format && npx lint-staged"
+  },
+  "lint-staged": {
+    "*.{js,ts,tsx}": "eslint --cache --fix"
+  },
   "prettier": {
     "singleQuote": true
   },
