@@ -4,10 +4,7 @@ import { TransitionProps } from 'react-transition-group/Transition';
 import ownerDocument from '../utils/ownerDocument';
 import ownerWindow from '../utils/ownerWindow';
 import useForkRef from '../hooks/useForkRef';
-import {
-  createTransition,
-  getTransitionProps,
-} from '../utils/transition';
+import { createTransition, getTransitionProps } from '../utils/transition';
 import debounce from '../utils/debounce';
 
 export type DirectionType = 'left' | 'right' | 'up' | 'down';
