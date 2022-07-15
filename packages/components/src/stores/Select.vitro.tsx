@@ -1,6 +1,6 @@
 import React, { useCallback, useRef, useState } from 'react';
 import styled from 'styled-components';
-import { Select, FormLabel, FormControl, MenuItem } from '../components';
+import { Select, FormLabel, FormControl, MenuItem } from '..';
 
 export const SelectExample: React.FC = (props) => {
   const [selectValue, setSelectValue] = React.useState(null);

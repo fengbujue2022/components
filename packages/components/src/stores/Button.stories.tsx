@@ -1,6 +1,6 @@
 import React, { useCallback, useRef, useState } from 'react';
 import styled from 'styled-components';
-import Button from '../components/Button';
+import Button from '../Button';
 
 export const RippleEffectButtonExample: React.FC = (props) => {
   return (

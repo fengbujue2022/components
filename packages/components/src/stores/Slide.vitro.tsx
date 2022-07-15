@@ -1,7 +1,7 @@
 import React, { useCallback, useRef, useState } from 'react';
 import styled from 'styled-components';
-import Button from '../components/Button';
-import Slide from '../components/Transitions/Slide';
+import Button from '../Button';
+import Slide from '../Transitions/Slide';
 
 export const SlideExample: React.FC = (props) => {
   const containerRef = useRef<HTMLDivElement>(null);

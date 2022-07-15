@@ -1,8 +1,8 @@
 import React, { useCallback, useRef, useState } from 'react';
 import styled from 'styled-components';
-import PinInput from '../components/PinInput';
-import { PinInputField } from '../components/PinInput/PinInput';
-import TextField from '../components/TextField';
+import PinInput from '../PinInput';
+import { PinInputField } from '../PinInput/PinInput';
+import TextField from '../TextField';
 
 const HStack = styled.div`
   display: flex;

@@ -1,8 +1,8 @@
 import React, { useCallback, useRef, useState } from 'react';
 import styled from 'styled-components';
-import Modal from '../components/Modal';
-import Button from '../components/Button';
-import { Slide } from '../components';
+import Modal from '../Modal';
+import Button from '../Button';
+import { Slide } from '..';
 
 const DialogContainer = styled.div`
   display: flex;
