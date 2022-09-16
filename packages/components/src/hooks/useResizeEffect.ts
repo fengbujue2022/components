@@ -2,13 +2,13 @@ import { DependencyList, RefObject } from 'react';
 import useEnhancedEffect from './useEnhancedEffect';
 import useLatest from './useLatest';
 
-export interface OnResizeEvent {
+export interface Rect {
   width: number;
   height: number;
 }
 
 export interface OnResize {
-  (event: OnResizeEvent): void;
+  (event: Rect): void;
 }
 
 function useResizeEffect<T extends HTMLElement>(

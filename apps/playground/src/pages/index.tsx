@@ -3,7 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { images } from '../data/images';
 import styled from 'styled-components';
-import { SharedElement } from 'components';
+import { SharedElement, VirtualizedList } from 'components';
 import { generateKey } from '../helpers/generateKey';
 
 const GalleryContainer = styled.div`
@@ -59,6 +59,7 @@ const Index = function () {
                       width={512}
                       height={512}
                       layout={'intrinsic'}
+                      alt={'alt'}
                     />
                   </ImageBox>
                 </SharedElement>
@@ -66,9 +67,14 @@ const Index = function () {
             </Link>
           );
         })}
+        <VirtualizedListExample />
       </GalleryContainer>
     </>
   );
+};
+
+const VirtualizedListExample = () => {
+  return <VirtualizedList />;
 };
 
 export default Index;

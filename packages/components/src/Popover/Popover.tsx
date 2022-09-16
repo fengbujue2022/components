@@ -168,7 +168,7 @@ const Popover = React.forwardRef<
     if (open) {
       setPositioningStyles();
     }
-  }, []);
+  }, [open, setPositioningStyles]);
 
   React.useEffect(() => {
     if (!open) {
