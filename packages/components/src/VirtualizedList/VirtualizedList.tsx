@@ -1,72 +1,115 @@
 import React from 'react';
-import useEnhancedEffect from 'src/hooks/useEnhancedEffect';
-import useLatest from 'src/hooks/useLatest';
-import useResizeEffect, { Rect } from 'src/hooks/useResizeEffect';
+import useEnhancedEffect from '../hooks/useEnhancedEffect';
+import useResizeEffect, { Rect } from '../hooks/useResizeEffect';
 
-interface UseVirtualOptions {
+interface State {
+  items: MeasuredItem[];
+  contentSize: number;
+  contentMargin: number;
+}
+
+interface Options {
   itemCount: number;
   getItemSize: (index: number, width: number) => number;
 }
 
 interface MeasuredItem {
   index: number;
+  size: number;
   start: number;
   end: number;
 }
 
+const BUFFER_FACTOR = 1.5;
+
 function binarySearch({
-  minIndex,
-  maxIndex,
+  low,
+  high,
   compare,
 }: {
-  minIndex: number;
-  maxIndex: number;
-  compare: (mid: number) => boolean;
+  low: number;
+  high: number;
+  compare: (mid: number) => number;
 }) {
-  while (maxIndex >= minIndex) {
-    const middle = minIndex + Math.floor((maxIndex - minIndex) / 2);
-    if (compare(middle)) {
-      minIndex = middle + 1;
+  while (low <= high) {
+    const middle = low + Math.floor((high - low) / 2);
+    const compareResult = compare(middle);
+
+    if (compareResult > 0) {
+      high = middle - 1;
+    } else if (compareResult < 0) {
+      low = middle + 1;
     } else {
-      maxIndex = middle - 1;
+      return middle;
     }
   }
-  if (minIndex > 0) {
-    return minIndex - 1;
+
+  if (low > 0) {
+    return low - 1;
   }
+
   //not found :)
   return 0;
 }
 
 function exponentialSearch({
-  arrayLength,
   index,
+  high,
   compare,
 }: {
-  arrayLength: number;
   index: number;
-  compare: (index: number) => boolean;
+  high: number;
+  compare: (index: number) => number;
 }) {
   let interval = 1;
-  while (index < arrayLength && compare(index)) {
-    index += interval;
+  let newIndex = index;
+  while (newIndex < high && compare(newIndex) < 0) {
+    index = newIndex;
+    newIndex += interval;
     interval *= 2;
   }
+
   return binarySearch({
-    minIndex: Math.min(index, arrayLength - 1),
-    maxIndex: Math.floor(index / 2),
+    low: index,
+    high: high,
     compare,
   });
+}
+
+function shouldUpdate(
+  prev: MeasuredItem[],
+  next: MeasuredItem[],
+  skip: Record<string, boolean>
+): boolean {
+  if (prev.length !== next.length) return true;
+
+  for (let i = 0; i < prev.length; i += 1)
+    if (
+      Object.keys(prev[i]).some((key) => {
+        const k = key as keyof MeasuredItem;
+        return !skip[k] && prev[i][k] !== next[i][k];
+      })
+    )
+      return true;
+
+  return false;
 }
 
 function useVirtual<
   B extends HTMLElement = HTMLElement,
   C extends HTMLElement = B
->(options: UseVirtualOptions) {
+>(options: Options) {
   const { itemCount, getItemSize } = options;
 
-  const [items, setItems] = React.useState([]);
+  const [state, setState] = React.useState<State>({
+    items: [],
+    contentSize: 0,
+    contentMargin: 0,
+  });
+
   const scrollKey = 'scrollTop';
+  const sizeKey = 'height';
+  const marginKey = 'marginTop';
   const boxRef = React.useRef<B>(null);
   const contentRef = React.useRef<C>(null);
   const measuredItemsRef = React.useRef<MeasuredItem[]>([]);
@@ -75,6 +118,7 @@ function useVirtual<
     height: 0,
   });
   const scrollOffsetRef = React.useRef(0);
+  const totalSizeRef = React.useRef(0);
 
   const getItemSizeInternal = React.useCallback(
     (index: number) => {
@@ -88,73 +132,30 @@ function useVirtual<
     (index: number): MeasuredItem => {
       const { current: measuredItems } = measuredItemsRef;
       const size = getItemSizeInternal(index);
-      const start = (measuredItems[index - 1]?.end ?? 0) + size;
+      const start = measuredItems[index - 1]?.end ?? 0;
       return {
         index: index,
         start: start,
+        size: size,
         end: start + size,
       };
     },
     [getItemSizeInternal]
   );
 
-  const getLastMeasuredItem = (): MeasuredItem => {
-    const { current: measuredItems } = measuredItemsRef;
-    return (
-      measuredItems.slice(-1).pop() ?? {
-        index: 0,
-        start: 0,
-        end: 0,
-      }
-    );
-  };
-
-  const calculateItems = React.useCallback(
-    (index: number) => {
-      const { current: measuredItems } = measuredItemsRef;
-      const last = getLastMeasuredItem();
-
-      for (let i = last.index; i < index; i++) {
-        measuredItems[i] = getMeasuredItem(index);
-      }
-
-      return getLastMeasuredItem();
-    },
-    [getMeasuredItem]
-  );
-
   const measureItems = React.useCallback(() => {
-    const { current: scrollOffset } = scrollOffsetRef;
     const { current: measuredItems } = measuredItemsRef;
-    const { current: boxRect } = boxRectRef;
-    const last = getLastMeasuredItem();
-    let lastEnd = last.end;
-    let startIndex = last.index;
+    measuredItems.length = itemCount;
 
-    const compare = (index: number) =>
-      calculateItems(index).start < scrollOffset;
+    let totalSize = 0;
 
-    if (lastEnd < scrollOffset) {
-      startIndex = binarySearch({
-        minIndex: 0,
-        maxIndex: itemCount,
-        compare: compare,
-      });
-    } else {
-      startIndex = exponentialSearch({
-        arrayLength: itemCount,
-        index: 0,
-        compare: compare,
-      });
+    for (let i = 0; i < itemCount; i++) {
+      measuredItems[i] = getMeasuredItem(i);
+      totalSize += measuredItems[i].size;
     }
 
-    let endIndex = startIndex;
-    const viewportOffset = scrollOffset + boxRect.height; // TODO: USE RECT KEY
-    while (measuredItems[endIndex].end < viewportOffset) {
-      endIndex++;
-      calculateItems(endIndex);
-    }
-  }, [calculateItems, itemCount]);
+    totalSizeRef.current = totalSize;
+  }, [getMeasuredItem, itemCount]);
 
   const scrollTo = React.useCallback(
     (offset: number) => {
@@ -174,12 +175,68 @@ function useVirtual<
 
   const scrollToIndex = React.useCallback((index: number) => {}, []);
 
-  const handleScroll = React.useCallback((scrollOffset: number) => {
-    // calculate shown items by offset
-  }, []);
+  const handleScroll = React.useCallback(
+    (scrollOffset: number) => {
+      const { current: measuredItems } = measuredItemsRef;
+      const { current: boxRect } = boxRectRef;
+      const lastIndex = itemCount - 1;
+      let startIndex = 0;
+
+      startIndex = binarySearch({
+        low: 0,
+        high: lastIndex,
+        compare: (index: number) => {
+          const value = measuredItems[index].start;
+          if (value < scrollOffset) {
+            return -1;
+          } else if (value > scrollOffset) {
+            return 1;
+          }
+          return 0;
+        },
+      });
+
+      let endIndex = startIndex;
+      const viewportOffset = scrollOffset + boxRect[sizeKey] * BUFFER_FACTOR;
+
+      endIndex = exponentialSearch({
+        index: startIndex,
+        high: lastIndex,
+        compare: (index: number) => {
+          const value = measuredItems[index].end;
+          if (value < viewportOffset) {
+            return -1;
+          } else if (value > viewportOffset) {
+            return 1;
+          }
+          return 0;
+        },
+      });
+
+      const items: MeasuredItem[] = [];
+      for (let i = startIndex; i <= endIndex; i++) {
+        items.push(measuredItems[i]);
+      }
+
+      const totalSize = totalSizeRef.current;
+      const margin = items[0]?.start ?? 0;
+
+      setState((prevState) =>
+        shouldUpdate(prevState.items, items, {})
+          ? {
+              items: items,
+              contentSize: totalSize - margin,
+              contentMargin: margin,
+            }
+          : prevState
+      );
+    },
+    [itemCount]
+  );
 
   useEnhancedEffect(() => {
     const { current: box } = boxRef;
+
     if (!box) {
       return () => null;
     }
@@ -187,9 +244,11 @@ function useVirtual<
     const scrollHandler = ({ target }: Event) => {
       const scrollOffset = (target as HTMLElement)[scrollKey];
 
-      scrollOffsetRef.current = scrollOffset;
+      if (scrollOffset === scrollOffsetRef.current) {
+        return;
+      }
 
-      measureItems();
+      scrollOffsetRef.current = scrollOffset;
       handleScroll(scrollOffset);
     };
     box.addEventListener('scroll', scrollHandler, { passive: true });
@@ -197,19 +256,29 @@ function useVirtual<
     return () => {
       box.removeEventListener('scroll', scrollHandler);
     };
-  }, [handleScroll, measureItems]);
+  }, [handleScroll]);
+
+  useEnhancedEffect(() => {
+    if (contentRef.current) {
+      contentRef.current.style[sizeKey] = `${state.contentSize}px`;
+      contentRef.current.style[marginKey] = `${state.contentMargin}px`;
+    }
+  }, [contentRef, state.contentSize, state.contentMargin]);
 
   useResizeEffect(
     boxRef,
     (rect: Rect) => {
       boxRectRef.current = rect;
+      measureItems();
+      handleScroll(scrollOffsetRef.current);
     },
-    []
+    [scrollOffsetRef]
   );
 
   return {
     boxRef,
     contentRef,
+    items: state.items,
     scrollToOffset,
     scrollToIndex,
   };
@@ -218,17 +287,31 @@ function useVirtual<
 export interface VirtualizedListProps {}
 
 export default function VirtualizedList() {
-  const items = React.useMemo(() => Array<number>(1000).fill(0), []);
-  const { boxRef, contentRef } = useVirtual<HTMLDivElement>({
+  const { items, boxRef, contentRef } = useVirtual<HTMLDivElement>({
     itemCount: 1000,
-    getItemSize: () => 100,
+    getItemSize: () => 50,
   });
 
   return (
-    <div ref={boxRef}>
+    <div
+      style={{ height: '500px', width: '300px', overflow: 'auto' }}
+      ref={boxRef}
+    >
       <div ref={contentRef}>
-        {items.map((_, index) => {
-          return <div>{index}</div>;
+        {items.map((_) => {
+          return (
+            <div
+              key={_.index}
+              style={{
+                height: '50px',
+                textAlign: 'center',
+                lineHeight: '50px',
+                backgroundColor: `${_.index % 2 ? 'lightgray' : ''}`,
+              }}
+            >
+              {_.index}
+            </div>
+          );
         })}
       </div>
     </div>
