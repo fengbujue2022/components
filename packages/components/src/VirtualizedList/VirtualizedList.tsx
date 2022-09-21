@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import styled from 'styled-components';
 import useEnhancedEffect from '../hooks/useEnhancedEffect';
 import useResizeEffect, { Rect } from '../hooks/useResizeEffect';
 
@@ -20,7 +21,15 @@ interface MeasuredItem {
   end: number;
 }
 
-const BUFFER_FACTOR = 1.5;
+interface ScrollToOptions extends ScrollOptions {
+  offset: number;
+}
+
+interface ScrollToIndexOptions extends ScrollOptions {
+  index: number;
+}
+
+const BUFFER_FACTOR = 3;
 
 function binarySearch({
   low,
@@ -48,7 +57,6 @@ function binarySearch({
     return low - 1;
   }
 
-  //not found :)
   return 0;
 }
 
@@ -107,6 +115,7 @@ function useVirtual<
     contentMargin: 0,
   });
 
+  const scrollPKey = 'top';
   const scrollKey = 'scrollTop';
   const sizeKey = 'height';
   const marginKey = 'marginTop';
@@ -158,22 +167,38 @@ function useVirtual<
   }, [getMeasuredItem, itemCount]);
 
   const scrollTo = React.useCallback(
-    (offset: number) => {
+    ({ offset, behavior }: ScrollToOptions) => {
       if (boxRef.current) {
-        boxRef.current[scrollKey] = offset;
+        boxRef.current.scrollTo({
+          [scrollPKey]: offset,
+          behavior: behavior,
+        });
       }
     },
-    [scrollKey]
+    [scrollPKey]
   );
 
   const scrollToOffset = React.useCallback(
-    (offset: number) => {
-      scrollTo(offset);
+    (options: ScrollToOptions) => {
+      scrollTo(options);
     },
     [scrollTo]
   );
 
-  const scrollToIndex = React.useCallback((index: number) => {}, []);
+  const scrollToIndex = React.useCallback(
+    ({ index, behavior }: ScrollToIndexOptions) => {
+      const { current: measuredItems } = measuredItemsRef;
+      const measureItem = measuredItems[index];
+      if (measureItem) {
+        const offset = measureItem.start;
+        scrollTo({
+          offset: offset,
+          behavior,
+        });
+      }
+    },
+    [scrollTo]
+  );
 
   const handleScroll = React.useCallback(
     (scrollOffset: number) => {
@@ -263,7 +288,7 @@ function useVirtual<
       contentRef.current.style[sizeKey] = `${state.contentSize}px`;
       contentRef.current.style[marginKey] = `${state.contentMargin}px`;
     }
-  }, [contentRef, state.contentSize, state.contentMargin]);
+  }, [state.contentSize, state.contentMargin]);
 
   useResizeEffect(
     boxRef,
@@ -272,7 +297,7 @@ function useVirtual<
       measureItems();
       handleScroll(scrollOffsetRef.current);
     },
-    [scrollOffsetRef]
+    []
   );
 
   return {
@@ -286,11 +311,33 @@ function useVirtual<
 
 export interface VirtualizedListProps {}
 
+const Item = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  &.dark {
+    background: #e5e5e5;
+  }
+`;
+
 export default function VirtualizedList() {
-  const { items, boxRef, contentRef } = useVirtual<HTMLDivElement>({
-    itemCount: 1000,
-    getItemSize: () => 50,
-  });
+  const { items, boxRef, contentRef, scrollToIndex } =
+    useVirtual<HTMLDivElement>({
+      itemCount: 1000,
+      getItemSize: () => 50,
+    });
+
+  useEffect(() => {
+    const d = setTimeout(() => {
+      scrollToIndex({
+        index: 666,
+        behavior: 'auto',
+      });
+    }, 1000);
+    return () => {
+      clearTimeout(d);
+    };
+  }, [scrollToIndex]);
 
   return (
     <div
@@ -300,17 +347,15 @@ export default function VirtualizedList() {
       <div ref={contentRef}>
         {items.map((_) => {
           return (
-            <div
+            <Item
               key={_.index}
+              className={`item ${_.index % 2 ? 'dark' : ''}`}
               style={{
-                height: '50px',
-                textAlign: 'center',
-                lineHeight: '50px',
-                backgroundColor: `${_.index % 2 ? 'lightgray' : ''}`,
+                height: `${_.size}px`,
               }}
             >
-              {_.index}
-            </div>
+              ♻️ {_.index}
+            </Item>
           );
         })}
       </div>
