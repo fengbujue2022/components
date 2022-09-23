@@ -70,16 +70,16 @@ function exponentialSearch({
   compare: (index: number) => number;
 }) {
   let interval = 1;
-  let newIndex = index;
-  while (newIndex < high && compare(newIndex) < 0) {
-    index = newIndex;
-    newIndex += interval;
+  let next = index;
+  while (next < high && compare(next) < 0) {
+    index = next;
+    next += interval;
     interval *= 2;
   }
 
   return binarySearch({
     low: index,
-    high: high,
+    high: Math.min(next, high),
     compare,
   });
 }
