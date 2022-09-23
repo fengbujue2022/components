@@ -12,6 +12,7 @@ interface State {
 interface Options {
   itemCount: number;
   getItemSize: (index: number, width: number) => number;
+  overscanCount?: number;
 }
 
 interface MeasuredItem {
@@ -103,11 +104,11 @@ function shouldUpdate(
   return false;
 }
 
-function useVirtual<
+export function useVirtual<
   B extends HTMLElement = HTMLElement,
   C extends HTMLElement = B
 >(options: Options) {
-  const { itemCount, getItemSize } = options;
+  const { itemCount, getItemSize, overscanCount = 5 } = options;
 
   const [state, setState] = React.useState<State>({
     items: [],
@@ -126,7 +127,7 @@ function useVirtual<
     width: 0,
     height: 0,
   });
-  const scrollOffsetRef = React.useRef(0);
+  const scrollOffsetRef = React.useRef(0); // not in use!
   const totalSizeRef = React.useRef(0);
 
   const getItemSizeInternal = React.useCallback(
@@ -166,42 +167,10 @@ function useVirtual<
     totalSizeRef.current = totalSize;
   }, [getMeasuredItem, itemCount]);
 
-  const scrollTo = React.useCallback(
-    ({ offset, behavior }: ScrollToOptions) => {
-      if (boxRef.current) {
-        boxRef.current.scrollTo({
-          [scrollPKey]: offset,
-          behavior: behavior,
-        });
-      }
-    },
-    [scrollPKey]
-  );
-
-  const scrollToOffset = React.useCallback(
-    (options: ScrollToOptions) => {
-      scrollTo(options);
-    },
-    [scrollTo]
-  );
-
-  const scrollToIndex = React.useCallback(
-    ({ index, behavior }: ScrollToIndexOptions) => {
-      const { current: measuredItems } = measuredItemsRef;
-      const measureItem = measuredItems[index];
-      if (measureItem) {
-        const offset = measureItem.start;
-        scrollTo({
-          offset: offset,
-          behavior,
-        });
-      }
-    },
-    [scrollTo]
-  );
-
   const handleScroll = React.useCallback(
     (scrollOffset: number) => {
+      scrollOffsetRef.current = scrollOffset;
+
       const { current: measuredItems } = measuredItemsRef;
       const { current: boxRect } = boxRectRef;
       const lastIndex = itemCount - 1;
@@ -222,7 +191,7 @@ function useVirtual<
       });
 
       let endIndex = startIndex;
-      const viewportOffset = scrollOffset + boxRect[sizeKey] * BUFFER_FACTOR;
+      const viewportOffset = scrollOffset + boxRect[sizeKey];
 
       endIndex = exponentialSearch({
         index: startIndex,
@@ -237,6 +206,9 @@ function useVirtual<
           return 0;
         },
       });
+
+      startIndex = Math.max(0, startIndex - overscanCount);
+      endIndex = Math.min(lastIndex, endIndex + overscanCount);
 
       const items: MeasuredItem[] = [];
       for (let i = startIndex; i <= endIndex; i++) {
@@ -256,7 +228,52 @@ function useVirtual<
           : prevState
       );
     },
-    [itemCount]
+    [itemCount, overscanCount]
+  );
+
+  const scrollTo = React.useCallback(
+    ({ offset, behavior }: ScrollToOptions) => {
+      if (boxRef.current) {
+        handleScroll(offset);
+        const scroll = () => {
+          boxRef.current?.scrollTo({
+            [scrollPKey]: offset,
+            behavior: behavior,
+          });
+        };
+        if (state.contentSize === 0) {
+          requestAnimationFrame(() => {
+            scroll();
+          });
+        } else {
+          scroll();
+        }
+      }
+    },
+    [scrollPKey, handleScroll, state.contentSize]
+  );
+
+  const scrollToOffset = React.useCallback(
+    (options: ScrollToOptions) => {
+      scrollTo(options);
+    },
+    [scrollTo]
+  );
+
+  const scrollToIndex = React.useCallback(
+    ({ index, behavior }: ScrollToIndexOptions) => {
+      const { current: measuredItems } = measuredItemsRef;
+      measureItems();
+      const measureItem = measuredItems[index];
+      if (measureItem) {
+        const offset = measureItem.start;
+        scrollTo({
+          offset: offset,
+          behavior,
+        });
+      }
+    },
+    [scrollTo, measureItems]
   );
 
   useEnhancedEffect(() => {
@@ -273,7 +290,6 @@ function useVirtual<
         return;
       }
 
-      scrollOffsetRef.current = scrollOffset;
       handleScroll(scrollOffset);
     };
     box.addEventListener('scroll', scrollHandler, { passive: true });
@@ -309,56 +325,39 @@ function useVirtual<
   };
 }
 
-export interface VirtualizedListProps {}
-
-const Item = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  &.dark {
-    background: #e5e5e5;
-  }
-`;
-
-export default function VirtualizedList() {
-  const { items, boxRef, contentRef, scrollToIndex } =
-    useVirtual<HTMLDivElement>({
-      itemCount: 1000,
-      getItemSize: () => 50,
-    });
-
-  useEffect(() => {
-    const d = setTimeout(() => {
-      scrollToIndex({
-        index: 666,
-        behavior: 'auto',
-      });
-    }, 1000);
-    return () => {
-      clearTimeout(d);
-    };
-  }, [scrollToIndex]);
-
-  return (
-    <div
-      style={{ height: '500px', width: '300px', overflow: 'auto' }}
-      ref={boxRef}
-    >
-      <div ref={contentRef}>
-        {items.map((_) => {
-          return (
-            <Item
-              key={_.index}
-              className={`item ${_.index % 2 ? 'dark' : ''}`}
-              style={{
-                height: `${_.size}px`,
-              }}
-            >
-              ♻️ {_.index}
-            </Item>
-          );
-        })}
-      </div>
-    </div>
-  );
+export interface VirtualizedListProps extends Options {
+  height: string;
+  width: string;
+  renderItem: (item: MeasuredItem) => React.ReactNode;
 }
+
+export type VirtualizedListHandle = {
+  scrollToOffset: (options: ScrollToOptions) => void;
+  scrollToIndex: ({ index, behavior }: ScrollToIndexOptions) => void;
+};
+
+export default React.forwardRef<VirtualizedListHandle, VirtualizedListProps>(
+  function VirtualizedList(props, ref) {
+    const { height, width, renderItem, ...options } = props;
+    const { items, boxRef, contentRef, scrollToIndex, scrollToOffset } =
+      useVirtual<HTMLDivElement>(options);
+
+    React.useImperativeHandle(ref, () => ({
+      scrollToIndex,
+      scrollToOffset,
+    }));
+
+    return (
+      <div
+        style={{ height: height, width: width, overflow: 'auto' }}
+        ref={boxRef}
+      >
+        <div ref={contentRef}>
+          {items.map((_) => {
+            return renderItem(_);
+          })}
+        </div>
+      </div>
+    );
+  }
+);

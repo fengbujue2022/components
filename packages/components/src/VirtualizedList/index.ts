@@ -1,1 +1,1 @@
-export { default } from './VirtualizedList';
+export { default, useVirtual } from './VirtualizedList';

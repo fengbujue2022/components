@@ -5,6 +5,8 @@ import { images } from '../data/images';
 import styled from 'styled-components';
 import { SharedElement, VirtualizedList } from 'components';
 import { generateKey } from '../helpers/generateKey';
+import { VirtualizedListHandle } from 'components/src/VirtualizedList/VirtualizedList';
+import useEnhancedEffect from 'components/src/hooks/useEnhancedEffect';
 
 const GalleryContainer = styled.div`
   display: flex;
@@ -73,8 +75,48 @@ const Index = function () {
   );
 };
 
+const Item = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  &.dark {
+    background: #e5e5e5;
+  }
+`;
+
 const VirtualizedListExample = () => {
-  return <VirtualizedList />;
+  const virtualListRef = React.useRef<VirtualizedListHandle | null>(null);
+
+  useEnhancedEffect(() => {
+    requestAnimationFrame(() => {
+      virtualListRef.current?.scrollToIndex({
+        index: 666,
+      });
+    });
+  }, []);
+
+  return (
+    <VirtualizedList
+      ref={virtualListRef}
+      height={'500px'}
+      width={'300px'}
+      itemCount={1000}
+      getItemSize={() => 50}
+      renderItem={(item) => {
+        return (
+          <Item
+            key={item.index}
+            className={`item ${item.index % 2 ? 'dark' : ''}`}
+            style={{
+              height: `${item.size}px`,
+            }}
+          >
+            ♻️ {item.index}
+          </Item>
+        );
+      }}
+    />
+  );
 };
 
 export default Index;

@@ -18,4 +18,4 @@ export { default as TextField } from './TextField';
 export { default as SharedElement, SharedHost } from './SharedElement';
 export { default as PinInput } from './PinInput';
 export { PinInputField } from './PinInput/PinInput';
-export { default as VirtualizedList } from './VirtualizedList';
+export { default as VirtualizedList, useVirtual } from './VirtualizedList';
