@@ -19,7 +19,7 @@
     "eslint-config-custom": "workspace:*",
     "react": "18.2.0",
     "react-dom": "18.2.0",
-    "react-transition-group": "4.4.2",
+    "react-transition-group": "4.4.5",
     "styled-components": "5.3.5",
     "tsconfig": "workspace:*",
     "typescript": "^4.5.2"
