@@ -1,7 +1,7 @@
 export const reflow = (node: Element) => node.scrollTop;
 
 interface ComponentProps {
-  easing: string | { enter?: string; exit?: string } | undefined;
+  easing: EasingProp;
   style: React.CSSProperties | undefined;
   timeout: number | { enter?: number; exit?: number };
 }
@@ -43,4 +43,15 @@ export function createTransition(animatedProp: string, props: TransitionProps) {
   return `${animatedProp} ${
     typeof duration === 'string' ? duration : formatMs(duration)
   } ${easing} ${typeof delay === 'string' ? delay : formatMs(delay)}`;
+}
+
+export function normalizedTransitionCallback(
+  nodeRef: React.MutableRefObject<HTMLElement | null>,
+  callback?: (node: HTMLElement, isAppearing: boolean) => void
+) {
+  return (isAppearing?: boolean) => {
+    if (callback) {
+      callback(nodeRef.current!, isAppearing!);
+    }
+  };
 }

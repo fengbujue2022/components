@@ -15,7 +15,6 @@ export type PopoverPosition = {
 
 export interface PopoverProps extends ModalProps {
   open: boolean;
-  onClose?: () => void;
   anchorEl?: Element | (() => Element);
   anchorOrigin?: {
     vertical: 'top' | 'bottom' | 'center';
@@ -117,6 +116,7 @@ const Popover = React.forwardRef<
           : ownerDocument(paperRef.current).body;
 
       const anchorRect = anchorElement.getBoundingClientRect();
+;
       return {
         top: anchorRect.top + getOffsetTop(anchorRect, anchorOrigin.vertical),
         left:
@@ -153,6 +153,7 @@ const Popover = React.forwardRef<
       }
 
       const positioningStyles = getPositioningStyles(element);
+
       element.style.top = positioningStyles.top;
       element.style.left = positioningStyles.left;
     },
@@ -163,7 +164,6 @@ const Popover = React.forwardRef<
     setPositioningStyles();
   };
 
-  // did mount
   React.useEffect(() => {
     if (open) {
       setPositioningStyles();

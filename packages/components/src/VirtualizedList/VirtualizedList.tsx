@@ -9,10 +9,11 @@ interface State {
   contentMargin: number;
 }
 
-interface Options {
+export interface VirtualizedListOptions {
   itemCount: number;
   getItemSize: (index: number, width: number) => number;
   overscanCount?: number;
+  horizontal?: boolean;
 }
 
 interface MeasuredItem {
@@ -29,8 +30,6 @@ interface ScrollToOptions extends ScrollOptions {
 interface ScrollToIndexOptions extends ScrollOptions {
   index: number;
 }
-
-const BUFFER_FACTOR = 3;
 
 function binarySearch({
   low,
@@ -107,8 +106,13 @@ function shouldUpdate(
 export function useVirtual<
   B extends HTMLElement = HTMLElement,
   C extends HTMLElement = B
->(options: Options) {
-  const { itemCount, getItemSize, overscanCount = 5 } = options;
+>(options: VirtualizedListOptions) {
+  const {
+    itemCount,
+    getItemSize,
+    overscanCount = 5,
+    horizontal = false,
+  } = options;
 
   const [state, setState] = React.useState<State>({
     items: [],
@@ -116,10 +120,10 @@ export function useVirtual<
     contentMargin: 0,
   });
 
-  const scrollPKey = 'top';
-  const scrollKey = 'scrollTop';
-  const sizeKey = 'height';
-  const marginKey = 'marginTop';
+  const scrollToKey = !horizontal ? 'top' : 'left';
+  const scrollKey = !horizontal ? 'scrollTop' : 'scrollLeft';
+  const sizeKey = !horizontal ? 'height' : 'width';
+  const marginKey = !horizontal ? 'marginTop' : 'marginLeft';
   const boxRef = React.useRef<B>(null);
   const contentRef = React.useRef<C>(null);
   const measuredItemsRef = React.useRef<MeasuredItem[]>([]);
@@ -228,7 +232,7 @@ export function useVirtual<
           : prevState
       );
     },
-    [itemCount, overscanCount]
+    [itemCount, overscanCount, sizeKey]
   );
 
   const scrollTo = React.useCallback(
@@ -237,7 +241,7 @@ export function useVirtual<
         handleScroll(offset);
         const scroll = () => {
           boxRef.current?.scrollTo({
-            [scrollPKey]: offset,
+            [scrollToKey]: offset,
             behavior: behavior,
           });
         };
@@ -250,7 +254,7 @@ export function useVirtual<
         }
       }
     },
-    [scrollPKey, handleScroll, state.contentSize]
+    [scrollToKey, handleScroll, state.contentSize]
   );
 
   const scrollToOffset = React.useCallback(
@@ -325,7 +329,7 @@ export function useVirtual<
   };
 }
 
-export interface VirtualizedListProps extends Options {
+export interface VirtualizedListProps extends VirtualizedListOptions {
   height: string;
   width: string;
   renderItem: (item: MeasuredItem) => React.ReactNode;
@@ -347,12 +351,17 @@ export default React.forwardRef<VirtualizedListHandle, VirtualizedListProps>(
       scrollToOffset,
     }));
 
+    const contentStyle: React.CSSProperties = {};
+    if (options.horizontal) {
+      contentStyle.display = 'flex';
+    }
+
     return (
       <div
         style={{ height: height, width: width, overflow: 'auto' }}
         ref={boxRef}
       >
-        <div ref={contentRef}>
+        <div style={contentStyle} ref={contentRef}>
           {items.map((_) => {
             return renderItem(_);
           })}

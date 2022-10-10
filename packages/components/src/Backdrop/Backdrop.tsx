@@ -28,8 +28,8 @@ const Backdrop = React.forwardRef<HTMLDivElement, BackdropProps>(
   function Backdrop(props, ref?) {
     const { children, invisible, open, transitionDuration, ...other } = props;
     return (
-      <Fade in={open} timeout={transitionDuration} {...other}>
-        <BackdropRoot ref={ref} invisible={invisible}>
+      <Fade in={open} timeout={transitionDuration}>
+        <BackdropRoot ref={ref} invisible={invisible} {...other}>
           {children}
         </BackdropRoot>
       </Fade>

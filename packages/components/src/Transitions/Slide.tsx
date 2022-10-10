@@ -3,18 +3,25 @@ import { Transition } from 'react-transition-group';
 import { TransitionProps } from 'react-transition-group/Transition';
 import ownerDocument from '../utils/ownerDocument';
 import ownerWindow from '../utils/ownerWindow';
-import useForkRef from '../hooks/useForkRef';
-import { createTransition, getTransitionProps } from '../utils/transition';
+import {
+  createTransition,
+  getTransitionProps,
+  normalizedTransitionCallback,
+  reflow,
+} from '../utils/transition';
 import debounce from '../utils/debounce';
+import useForkRef from '../hooks/useForkRef';
+import { resolveValue } from '../utils';
 
 export type DirectionType = 'left' | 'right' | 'up' | 'down';
-export type SlideProps = TransitionProps<HTMLElement | undefined> & {
-  children?: any;
-  container?: Element | (() => Element);
-  direction: DirectionType;
+export type SlideProps = TransitionProps & {
+  children: React.ReactElement;
+  container?: HTMLElement | (() => HTMLElement);
+  direction?: DirectionType;
+  easing?: EasingProp;
 };
 
-const defaultEasing = {
+const defaultEasing: EasingProp = {
   enter: 'ease-out',
   exit: 'sharp',
 };
@@ -22,10 +29,6 @@ const defaultEasing = {
 const defaultTimeout = {
   enter: 225,
   exit: 195,
-};
-
-const resolveContainer = (container: Element | (() => Element)) => {
-  return typeof container === 'function' ? container() : container;
 };
 
 function getTranslateValue(
@@ -91,7 +94,7 @@ export function setTranslateValue(
   containerProp: Element | (() => Element) | undefined
 ) {
   const resolvedContainer = containerProp
-    ? resolveContainer(containerProp)
+    ? resolveValue(containerProp)
     : ownerDocument(node).body;
 
   const transform = getTranslateValue(direction, node, resolvedContainer);
@@ -121,35 +124,25 @@ const Slide = React.forwardRef<HTMLElement, SlideProps>(function Slide(
     ...other
   } = props;
 
-  const nodeRef = React.useRef<HTMLElement | undefined>(undefined);
-  const handleRefIntermediary = useForkRef(children.ref, ref);
-  const handleRef = useForkRef(nodeRef, handleRefIntermediary);
-
-  const normalizedTransitionCallback =
-    (callback: (node: HTMLElement, isAppearing?: boolean) => void) =>
-    (isAppearing?: boolean) => {
-      if (callback) {
-        if (isAppearing === undefined) {
-          callback(nodeRef.current!);
-        } else {
-          callback(nodeRef.current!, isAppearing);
-        }
-      }
-    };
+  const nodeRef = React.useRef<HTMLElement | null>(null);
+  const foreignRef = useForkRef((children as any).ref, ref);
+  const handleRef = useForkRef(nodeRef, foreignRef);
 
   const handleEnter = normalizedTransitionCallback(
-    (node, isAppearing?: boolean) => {
+    nodeRef,
+    (node, isAppearing: boolean) => {
       setTranslateValue(direction, node, containerProp);
+      reflow(node);
 
       if (onEnter) {
-        // @ts-ignore
         onEnter(node, isAppearing);
       }
     }
   );
 
   const handleEntering = normalizedTransitionCallback(
-    (node, isAppearing?: boolean) => {
+    nodeRef,
+    (node, isAppearing: boolean) => {
       const transitionProps = getTransitionProps(
         { timeout, style, easing: easingProp },
         {
@@ -162,30 +155,32 @@ const Slide = React.forwardRef<HTMLElement, SlideProps>(function Slide(
       node.style.transform = 'none';
 
       if (onEntering) {
-        // @ts-ignore
         onEntering(node, isAppearing);
       }
     }
   );
 
-  const handleExit = normalizedTransitionCallback((node, isAppearing) => {
-    const transitionProps = getTransitionProps(
-      { timeout, style, easing: easingProp },
-      {
-        mode: 'exit',
+  const handleExit = normalizedTransitionCallback(
+    nodeRef,
+    (node, isAppearing) => {
+      const transitionProps = getTransitionProps(
+        { timeout, style, easing: easingProp },
+        {
+          mode: 'exit',
+        }
+      );
+
+      node.style.transition = createTransition('transform', transitionProps);
+
+      setTranslateValue(direction, node, containerProp);
+
+      if (onExit) {
+        onExit(node);
       }
-    );
-
-    node.style.transition = createTransition('transform', transitionProps);
-
-    setTranslateValue(direction, node, containerProp);
-
-    if (onExit) {
-      onExit(node);
     }
-  });
+  );
 
-  const handleExited = normalizedTransitionCallback((node) => {
+  const handleExited = normalizedTransitionCallback(nodeRef, (node) => {
     node.style.webkitTransition = '';
     node.style.transition = '';
 
@@ -234,7 +229,7 @@ const Slide = React.forwardRef<HTMLElement, SlideProps>(function Slide(
       onEntering={handleEntering}
       onExit={handleExit}
       onExited={handleExited}
-      {...other}
+      {...(other as TransitionProps<HTMLElement>)}
     >
       {(state) => {
         return React.cloneElement(children, {

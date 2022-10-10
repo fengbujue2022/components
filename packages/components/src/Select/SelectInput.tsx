@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { Menu } from '..';
 import useControlled from '../hooks/useControlled';
 import useForkRef from '../hooks/useForkRef';
+import getValidChildren from '../utils/getValidChildren';
 
 const SelectSelect = styled.div`
   -moz-appearance: none;
@@ -94,7 +95,7 @@ const SelectInput = React.forwardRef<HTMLInputElement, any>(
       [setOpenState]
     );
 
-    const childrenArray = React.Children.toArray(children);
+    const childrenArray = getValidChildren(children);
 
     const makeHandleItemClick =
       (child: React.ReactElement) =>
@@ -127,10 +128,6 @@ const SelectInput = React.forwardRef<HTMLInputElement, any>(
       };
 
     const items = childrenArray.map((child) => {
-      if (!React.isValidElement(child)) {
-        return null;
-      }
-
       const childValue = child.props.value;
       const selected = childValue === value;
 

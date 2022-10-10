@@ -4,6 +4,7 @@ import useForkRef from '../hooks/useForkRef';
 import {
   createTransition,
   getTransitionProps,
+  normalizedTransitionCallback,
   reflow,
 } from '../utils/transition';
 import {
@@ -64,7 +65,7 @@ const getTranslateValue = function (
 };
 
 const useBoundingClientRect = function (
-  nodeRef: React.MutableRefObject<HTMLElement | undefined>
+  nodeRef: React.MutableRefObject<HTMLElement | null>
 ) {
   const rectRef = React.useRef<DOMRect>({
     left: 0,
@@ -102,26 +103,15 @@ const SharedElement = React.forwardRef<HTMLElement, SharedElementProps>(
 
     const context = useSharedHostContext(port);
 
-    const nodeRef = React.useRef<HTMLElement | undefined>(undefined);
-    const handleRefIntermediary = useForkRef((children as any)?.ref, ref);
-    const handleRef = useForkRef(nodeRef, handleRefIntermediary);
+    const nodeRef = React.useRef<HTMLElement | null>(null);
+    const foreignRef = useForkRef((children as any).ref, ref); 
+    const handleRef = useForkRef(nodeRef, foreignRef);
 
     const nodeRect = useBoundingClientRect(nodeRef);
 
-    const normalizedTransitionCallback =
-      (callback: (node: HTMLElement, isAppearing?: boolean) => void) =>
-      (isAppearing?: boolean) => {
-        if (callback) {
-          if (isAppearing === undefined) {
-            callback(nodeRef.current!);
-          } else {
-            callback(nodeRef.current!, isAppearing);
-          }
-        }
-      };
-
     const handleEnter = normalizedTransitionCallback(
-      (node, isAppearing?: boolean) => {
+      nodeRef,
+      (node, isAppearing: boolean) => {
         nodeRect.update(); // computed bounding client rect
 
         const prevRect = context.getRect();
@@ -136,7 +126,8 @@ const SharedElement = React.forwardRef<HTMLElement, SharedElementProps>(
     );
 
     const handleEntering = normalizedTransitionCallback(
-      (node, isAppearing?: boolean) => {
+      nodeRef,
+      (node, isAppearing: boolean) => {
         const transitionProps = getTransitionProps(
           { timeout: defaultTimeout, style, easing: defaultEasing },
           {
