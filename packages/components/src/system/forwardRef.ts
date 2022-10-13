@@ -1,6 +1,4 @@
 import { forwardRef as forwardReactRef } from 'react';
-import { TransitionProps } from 'react-transition-group/Transition';
-import { FadeProps } from 'src/Transitions/Fade';
 
 import React from 'react';
 
