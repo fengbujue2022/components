@@ -7,6 +7,7 @@ import Modal, { ModalProps } from '../Modal';
 import { Fade } from '../Transitions';
 import Paper from '../Paper';
 import { TransitionProps } from '../types';
+import { forwardRef } from '../system';
 
 export type PopoverPosition = {
   top: number;
@@ -15,14 +16,14 @@ export type PopoverPosition = {
 
 export interface PopoverProps extends ModalProps {
   open: boolean;
-  anchorEl?: Element | (() => Element);
+  anchorEl?: HTMLElement | (() => HTMLElement);
   anchorOrigin?: {
     vertical: 'top' | 'bottom' | 'center';
     horizontal: 'left' | 'right' | 'center';
   };
   anchorPosition?: PopoverPosition;
   disablePortal?: boolean;
-  TransitionComponent: React.JSXElementConstructor<TransitionProps>;
+  TransitionComponent?: React.JSXElementConstructor<TransitionProps>;
   transitionDuration?:
     | number
     | { appear?: number; enter?: number; exit?: number };
@@ -85,10 +86,7 @@ const resolveAnchorEl = (anchorEl: Element | (() => Element) | undefined) => {
   return typeof anchorEl === 'function' ? anchorEl() : anchorEl;
 };
 
-const Popover = React.forwardRef<
-  HTMLDivElement,
-  React.PropsWithChildren<PopoverProps>
->(function Popover(props, ref?) {
+const Popover = forwardRef<PopoverProps, 'div'>(function Popover(props, ref?) {
   const {
     open,
     transitionDuration,
@@ -116,7 +114,6 @@ const Popover = React.forwardRef<
           : ownerDocument(paperRef.current).body;
 
       const anchorRect = anchorElement.getBoundingClientRect();
-;
       return {
         top: anchorRect.top + getOffsetTop(anchorRect, anchorOrigin.vertical),
         left:

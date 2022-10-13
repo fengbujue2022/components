@@ -1,6 +1,7 @@
 import React from 'react';
 import { Transition } from 'react-transition-group';
-import { TransitionProps } from 'react-transition-group/Transition';
+import { EndHandler } from 'react-transition-group/Transition';
+import { ComponentWithAs, forwardRef } from '../system';
 import useForkRef from '../hooks/useForkRef';
 import {
   createTransition,
@@ -8,6 +9,7 @@ import {
   normalizedTransitionCallback,
   reflow,
 } from '../utils/transition';
+import { TransitionProps, EasingProp } from './types';
 
 export type FadeProps = TransitionProps & {
   children: React.ReactElement;
@@ -33,10 +35,7 @@ const defaultEasing: EasingProp = {
   exit: 'sharp',
 };
 
-const Fade = React.forwardRef<HTMLElement, FadeProps>(function Fade(
-  props,
-  ref?
-) {
+const Fade = forwardRef<FadeProps, 'div'>(function Fade(props, ref?) {
   const {
     style,
     in: inProp,
@@ -50,7 +49,7 @@ const Fade = React.forwardRef<HTMLElement, FadeProps>(function Fade(
     ...other
   } = props;
   const nodeRef = React.useRef<HTMLElement | null>(null);
-  const foreignRef = useForkRef((children as any).ref, ref); 
+  const foreignRef = useForkRef((children as any).ref, ref);
   const handleRef = useForkRef(nodeRef, foreignRef);
 
   const handleEnter = normalizedTransitionCallback(
@@ -106,7 +105,7 @@ const Fade = React.forwardRef<HTMLElement, FadeProps>(function Fade(
       onEntering={handleEntering}
       onExit={handleExit}
       onExited={handleExited}
-      {...(other as TransitionProps<HTMLElement>)}
+      {...(other as TransitionProps)}
     >
       {(state) => {
         return React.cloneElement(children, {

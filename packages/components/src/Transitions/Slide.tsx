@@ -1,6 +1,5 @@
 import React from 'react';
 import { Transition } from 'react-transition-group';
-import { TransitionProps } from 'react-transition-group/Transition';
 import ownerDocument from '../utils/ownerDocument';
 import ownerWindow from '../utils/ownerWindow';
 import {
@@ -12,6 +11,8 @@ import {
 import debounce from '../utils/debounce';
 import useForkRef from '../hooks/useForkRef';
 import { resolveValue } from '../utils';
+import { forwardRef } from '../system';
+import { TransitionProps, EasingProp } from './types';
 
 export type DirectionType = 'left' | 'right' | 'up' | 'down';
 export type SlideProps = TransitionProps & {
@@ -105,10 +106,7 @@ export function setTranslateValue(
   }
 }
 
-const Slide = React.forwardRef<HTMLElement, SlideProps>(function Slide(
-  props,
-  ref?
-) {
+const Slide = forwardRef<SlideProps, 'div'>(function Slide(props, ref?) {
   const {
     style,
     in: inProp,
@@ -229,7 +227,7 @@ const Slide = React.forwardRef<HTMLElement, SlideProps>(function Slide(
       onEntering={handleEntering}
       onExit={handleExit}
       onExited={handleExited}
-      {...(other as TransitionProps<HTMLElement>)}
+      {...(other as TransitionProps)}
     >
       {(state) => {
         return React.cloneElement(children, {

@@ -1,4 +1,5 @@
 import React from 'react';
+import { forwardRef } from '../system';
 import styled from 'styled-components';
 
 const PaperRoot = styled.div`
@@ -10,11 +11,13 @@ const PaperRoot = styled.div`
     rgba(0, 0, 0, 0.14) 0px 1px 1px 0px, rgba(0, 0, 0, 0.12) 0px 1px 3px 0px;
 `;
 
-const Paper = React.forwardRef<HTMLDivElement, React.PropsWithChildren<any>>(
-  function Paper(props, ref?) {
-    const { ...other } = props;
-    return <PaperRoot ref={ref} {...other} />;
-  }
-);
+export interface PaperProps {
+  children?: React.ReactNode;
+}
+
+const Paper = forwardRef<PaperProps, 'div'>(function Paper(props, ref?) {
+  const { ...other } = props;
+  return <PaperRoot ref={ref} {...other} />;
+});
 
 export default Paper;

@@ -13,6 +13,7 @@ import {
   useSharedHostContext,
 } from './useSharedHost';
 import isClient from '../utils/isClient';
+import { forwardRef } from '../system';
 
 export const SharedHost = ({ children }: React.PropsWithChildren<any>) => {
   const rectMapRef = React.useRef(new Map<string, DOMRect | undefined>());
@@ -97,14 +98,14 @@ export interface SharedElementProps {
   style?: React.CSSProperties;
 }
 
-const SharedElement = React.forwardRef<HTMLElement, SharedElementProps>(
+const SharedElement = forwardRef<SharedElementProps, any>(
   function SharedElement(props, ref?) {
     const { children, port, style } = props;
 
     const context = useSharedHostContext(port);
 
     const nodeRef = React.useRef<HTMLElement | null>(null);
-    const foreignRef = useForkRef((children as any).ref, ref); 
+    const foreignRef = useForkRef((children as any).ref, ref);
     const handleRef = useForkRef(nodeRef, foreignRef);
 
     const nodeRect = useBoundingClientRect(nodeRef);

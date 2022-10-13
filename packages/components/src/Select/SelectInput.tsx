@@ -1,9 +1,11 @@
 import React from 'react';
+import { InputProps } from '../Input/Input';
 import styled from 'styled-components';
 import { Menu } from '..';
 import useControlled from '../hooks/useControlled';
 import useForkRef from '../hooks/useForkRef';
 import getValidChildren from '../utils/getValidChildren';
+import { forwardRef } from '../system';
 
 const SelectSelect = styled.div`
   -moz-appearance: none;
@@ -44,163 +46,170 @@ const SelectNativeInput = styled.input`
   box-sizing: border-box;
 `;
 
-const SelectInput = React.forwardRef<HTMLInputElement, any>(
-  function SelectInput(props, ref?) {
-    const {
-      autoFocus,
-      children,
-      defaultOpen,
-      defaultValue,
-      error,
-      name,
-      onBlur,
-      onChange,
-      onFocus,
-      open: openProp,
-      value: valueProp,
-      ...other
-    } = props;
-    const [value, setValueState] = useControlled({
-      controlled: valueProp,
-      default: defaultValue,
-    });
-    const [openState, setOpenState] = useControlled({
-      controlled: openProp,
-      default: defaultOpen,
-    });
+export interface SelectInputProps extends InputProps {
+  open?: boolean;
+  defaultOpen?: boolean;
+  defaultValue?: string;
+}
 
-    const inputRef = React.useRef<HTMLInputElement>(null);
-    const displayRef = React.useRef<HTMLDivElement | null>(null);
-    const [displayNode, setDisplayNode] = React.useState<HTMLDivElement | null>(
-      null
-    );
-    const handleRef = useForkRef(ref, inputRef);
+const SelectInput = forwardRef<SelectInputProps, 'input'>(function SelectInput(
+  props,
+  ref?
+) {
+  const {
+    autoFocus,
+    children,
+    defaultOpen,
+    defaultValue,
+    error,
+    name,
+    onBlur,
+    onChange,
+    onFocus,
+    open: openProp,
+    value: valueProp,
+    ...other
+  } = props;
+  const [value, setValueState] = useControlled({
+    controlled: valueProp,
+    default: defaultValue,
+  });
+  const [openState, setOpenState] = useControlled({
+    controlled: openProp,
+    default: defaultOpen,
+  });
 
-    const handleDisplayNodeRef = React.useCallback((node: any) => {
-      displayRef.current = node;
-      if (node) {
-        setDisplayNode(node);
+  const inputRef = React.useRef<HTMLInputElement>(null);
+  const displayRef = React.useRef<HTMLDivElement | null>(null);
+  const [displayNode, setDisplayNode] = React.useState<HTMLDivElement | null>(
+    null
+  );
+  const handleRef = useForkRef(ref, inputRef);
+
+  const handleDisplayNodeRef = React.useCallback((node: any) => {
+    displayRef.current = node;
+    if (node) {
+      setDisplayNode(node);
+    }
+  }, []);
+
+  React.useImperativeHandle(
+    handleRef,
+    () => ({
+      ...(inputRef.current as any),
+      focus: () => {
+        displayRef.current?.focus();
+        setOpenState(true);
+      },
+    }),
+    [setOpenState]
+  );
+
+  const childrenArray = getValidChildren(children);
+
+  const makeHandleItemClick =
+    (child: React.ReactElement) =>
+    (event: React.MouseEvent<HTMLInputElement>) => {
+      const newValue = child.props.value;
+
+      if (child.props.onClick) {
+        child.props.onClick(event);
       }
-    }, []);
 
-    React.useImperativeHandle(
-      handleRef,
-      () => ({
-        ...(inputRef.current as any),
-        focus: () => {
-          displayRef.current?.focus();
-          setOpenState(true);
-        },
-      }),
-      [setOpenState]
-    );
+      if (value !== newValue) {
+        setValueState(newValue);
+        if (onChange) {
+          const nativeEvent = event.nativeEvent || event;
+          // @ts-ignore
+          const clonedEvent = new nativeEvent.constructor(
+            nativeEvent.type,
+            nativeEvent
+          );
 
-    const childrenArray = getValidChildren(children);
-
-    const makeHandleItemClick =
-      (child: React.ReactElement) =>
-      (event: React.MouseEvent<HTMLDivElement>) => {
-        const newValue = child.props.value;
-
-        if (child.props.onClick) {
-          child.props.onClick(event);
+          Object.defineProperty(clonedEvent, 'target', {
+            writable: true,
+            value: { value: newValue, name },
+          });
+          onChange(clonedEvent);
         }
+      }
 
-        if (value !== newValue) {
-          setValueState(newValue);
-          if (onChange) {
-            const nativeEvent = event.nativeEvent || event;
-            // @ts-ignore
-            const clonedEvent = new nativeEvent.constructor(
-              nativeEvent.type,
-              nativeEvent
-            );
+      update(false);
+    };
 
-            Object.defineProperty(clonedEvent, 'target', {
-              writable: true,
-              value: { value: newValue, name },
-            });
-            onChange(clonedEvent, child);
-          }
-        }
+  const items = childrenArray.map((child) => {
+    const childValue = child.props.value;
+    const selected = childValue === value;
 
-        update(false);
-      };
+    return React.cloneElement(child, {
+      onClick: makeHandleItemClick(child),
+      role: 'option',
+      selected: selected,
+      value: undefined,
+      'data-value': value,
+    });
+  });
 
-    const items = childrenArray.map((child) => {
-      const childValue = child.props.value;
-      const selected = childValue === value;
+  const update = (open: boolean) => {
+    setOpenState(open);
+  };
 
-      return React.cloneElement(child, {
-        onClick: makeHandleItemClick(child),
-        role: 'option',
-        selected: selected,
-        value: undefined,
-        'data-value': value,
+  const handleMouseDown = (event: React.MouseEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    displayRef.current?.focus();
+    update(true);
+  };
+
+  const handleClose = () => {
+    update(false); // TODO
+  };
+
+  const minWidth = displayNode?.clientWidth;
+  const open = displayNode !== null && openState;
+
+  const handleBlur = (event: React.FocusEvent<HTMLInputElement>) => {
+    // TODO if (!open && onBlur)
+    if (onBlur) {
+      Object.defineProperty(event, 'target', {
+        writable: true,
+        value: { value, name },
       });
-    });
+      onBlur(event);
+    }
+  };
 
-    const update = (open: boolean) => {
-      setOpenState(open);
-    };
-
-    const handleMouseDown = (event: React.MouseEvent<HTMLDivElement>) => {
-      event.preventDefault();
-      displayRef.current?.focus();
-      update(true);
-    };
-
-    const handleClose = () => {
-      update(false); // TODO
-    };
-
-    const minWidth = displayNode?.clientWidth;
-    const open = displayNode !== null && openState;
-
-    const handleBlur = (event: React.FocusEvent<HTMLDivElement>) => {
-      // TODO if (!open && onBlur)
-      if (onBlur) {
-        Object.defineProperty(event, 'target', {
-          writable: true,
-          value: { value, name },
-        });
-        onBlur(event);
-      }
-    };
-
-    return (
-      <React.Fragment>
-        <SelectSelect
-          ref={handleDisplayNodeRef}
-          tabIndex={0}
-          role="button"
-          onMouseDown={handleMouseDown}
-          onBlur={handleBlur}
-          onFocus={onFocus}
-          {...other}
-        >
-          {value}
-        </SelectSelect>
-        <SelectNativeInput
-          ref={ref}
-          autoFocus={autoFocus}
-          onChange={onChange}
-        ></SelectNativeInput>
-        <Menu
-          anchorOrigin={{
-            vertical: 'bottom',
-            horizontal: 'left',
-          }}
-          open={open}
-          anchorEl={displayNode}
-          onClose={handleClose}
-          style={{ minWidth: minWidth }}
-        >
-          {items}
-        </Menu>
-      </React.Fragment>
-    );
-  }
-);
+  return (
+    <React.Fragment>
+      <SelectSelect
+        ref={handleDisplayNodeRef}
+        tabIndex={0}
+        role="button"
+        onMouseDown={handleMouseDown}
+        onBlur={handleBlur}
+        onFocus={onFocus}
+        {...other}
+      >
+        {value}
+      </SelectSelect>
+      <SelectNativeInput
+        ref={ref}
+        autoFocus={autoFocus}
+        onChange={onChange}
+      ></SelectNativeInput>
+      <Menu
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'left',
+        }}
+        open={open}
+        anchorEl={displayNode!}
+        onClose={handleClose}
+        style={{ minWidth: minWidth }}
+      >
+        {items}
+      </Menu>
+    </React.Fragment>
+  );
+});
 
 export default SelectInput;

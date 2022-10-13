@@ -2,6 +2,7 @@ import React from 'react';
 import styled from 'styled-components';
 import { FormControlContext } from './useFormControl';
 import isFilled from '../utils/isFilled';
+import { forwardRef } from '../system';
 
 export interface FormControlProps {
   error?: boolean;
@@ -10,6 +11,7 @@ export interface FormControlProps {
   required?: boolean;
   disabled?: boolean;
   hiddenLabel?: boolean;
+  children: React.ReactNode;
 }
 
 const FormControlRoot = styled.div`
@@ -25,10 +27,10 @@ const FormControlRoot = styled.div`
   vertical-align: top;
 `;
 
-const FormControl = React.forwardRef<
-  HTMLDivElement,
-  React.PropsWithChildren<FormControlProps>
->(function FormControl(props, ref?) {
+const FormControl = forwardRef<FormControlProps, 'div'>(function FormControl(
+  props,
+  ref?
+) {
   const {
     children,
     disabled = false,

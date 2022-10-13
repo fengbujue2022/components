@@ -187,7 +187,7 @@ const DialogActions = styled.div`
   flex: 0 0 auto;
 `;
 
-export const ModalExample: React.FC = (props) => {
+export const ModalExample: React.FC = () => {
   const [open, setOpen] = React.useState(false);
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
@@ -215,8 +215,8 @@ export const ModalExample: React.FC = (props) => {
   );
 };
 
-const SelectExample: React.FC = (props) => {
-  const [selectValue, setSelectValue] = React.useState(null);
+const SelectExample: React.FC = () => {
+  const [selectValue, setSelectValue] = React.useState('');
   const handleChange = (event: React.ChangeEvent<any>) => {
     const newValue = event.target.value;
     setSelectValue(newValue);
@@ -227,6 +227,7 @@ const SelectExample: React.FC = (props) => {
       <FormLabel>{'Field'}</FormLabel>
       <Select
         autoFocus
+        label="Select"
         value={selectValue}
         onChange={handleChange}
         style={{ minWidth: '120px' }}

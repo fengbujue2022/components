@@ -13,14 +13,13 @@ import {
   useFormControl,
 } from '../FormControl/useFormControl';
 import useEnhancedEffect from '../hooks/useEnhancedEffect';
+import { forwardRef } from '../system';
 
-export interface InputProps
-  extends React.InputHTMLAttributes<HTMLInputElement> {
+export interface InputProps {
   autoFocus?: boolean;
   name?: string;
   value?: string;
   inputComponent?: React.ElementType;
-  inputProps?: any;
   error?: boolean;
 }
 
@@ -141,15 +140,11 @@ const StyledInput = styled.input((prop) => {
   };
 });
 
-const Input = React.forwardRef<HTMLInputElement, InputProps>(function Input(
-  props,
-  ref
-) {
+const Input = forwardRef<InputProps, 'input'>(function Input(props, ref) {
   const {
     autoFocus,
     error,
     inputComponent,
-    inputProps,
     name,
     onBlur,
     onChange,
@@ -243,7 +238,6 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(function Input(
         onChange={handleChange}
         ref={handleRef}
         value={value}
-        {...inputProps}
         {...other}
       />
     </StyledInputRoot>

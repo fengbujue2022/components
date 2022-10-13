@@ -1,12 +1,14 @@
 import React from 'react';
+import { forwardRef } from '../system';
 import { Input } from '..';
-import SelectInput from './SelectInput';
+import SelectInput, { SelectInputProps } from './SelectInput';
+import { InputProps } from 'src/Input/Input';
 
-export interface SelectProps extends React.HTMLAttributes<HTMLDivElement> {
+export interface SelectProps extends InputProps, SelectInputProps {
   label?: string;
 }
 
-const Select = React.forwardRef<HTMLInputElement, React.PropsWithChildren<any>>(
+const Select = forwardRef<React.PropsWithChildren<SelectProps>, 'input'>(
   function Select(props, ref?) {
     const { autoFocus, children, error, onChange, value, ...other } = props;
 
@@ -18,8 +20,10 @@ const Select = React.forwardRef<HTMLInputElement, React.PropsWithChildren<any>>(
         inputComponent={SelectInput}
         onChange={onChange}
         value={value}
-        inputProps={{ children, ...other }}
-      />
+        {...other}
+      >
+        {children}
+      </Input>
     );
   }
 );

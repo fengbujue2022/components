@@ -9,6 +9,7 @@ import {
   ownerWindow,
   resolveValue,
 } from '../utils';
+import { forwardRef } from '../system';
 
 export type ModalCloseEventType = 'backdropClick' | 'escapeKeyDown';
 export interface ModalProps extends HTMLAttributes<HTMLDivElement> {
@@ -23,6 +24,7 @@ export interface ModalProps extends HTMLAttributes<HTMLDivElement> {
   hideBackdrop?: boolean;
   keepMounted?: boolean;
   backdropProps?: Partial<BackdropProps>;
+  children?: React.ReactNode;
 }
 
 const ModalRoot = styled.div<Pick<ModalProps, 'open'>>((props) => ({
@@ -54,10 +56,7 @@ function getPaddingRight(element: Element): number {
   );
 }
 
-const Modal = React.forwardRef<
-  HTMLDivElement,
-  React.PropsWithChildren<ModalProps>
->(function Modal(props, ref?) {
+const Modal = forwardRef<ModalProps, 'div'>(function Modal(props, ref?) {
   const {
     backdropProps,
     children,

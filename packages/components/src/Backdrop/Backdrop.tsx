@@ -1,4 +1,5 @@
 import React from 'react';
+import { forwardRef } from '../system';
 import styled, { StyledComponentProps } from 'styled-components';
 import { Fade } from '../Transitions';
 export interface BackdropProps
@@ -24,17 +25,18 @@ const BackdropRoot = styled.div<Pick<BackdropProps, 'invisible'>>`
   -webkit-tap-highlight-color: transparent;
 `;
 
-const Backdrop = React.forwardRef<HTMLDivElement, BackdropProps>(
-  function Backdrop(props, ref?) {
-    const { children, invisible, open, transitionDuration, ...other } = props;
-    return (
-      <Fade in={open} timeout={transitionDuration}>
-        <BackdropRoot ref={ref} invisible={invisible} {...other}>
-          {children}
-        </BackdropRoot>
-      </Fade>
-    );
-  }
-);
+const Backdrop = forwardRef<BackdropProps, 'div'>(function Backdrop(
+  props,
+  ref?
+) {
+  const { children, invisible, open, transitionDuration, ...other } = props;
+  return (
+    <Fade in={open} timeout={transitionDuration}>
+      <BackdropRoot ref={ref} invisible={invisible} {...other}>
+        {children}
+      </BackdropRoot>
+    </Fade>
+  ) as any;
+});
 
 export default Backdrop;

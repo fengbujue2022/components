@@ -6,6 +6,7 @@ import {
   makeGetUtilityClass,
 } from '../utils/generateUtilityClasses';
 import composeClasses from '../utils/composeClasses';
+import { forwardRef } from '../system';
 
 const componentName = 'MenuItem';
 const menuItemClasses = generateUtilityClasses(componentName, ['selected']);
@@ -56,14 +57,15 @@ const MenuItemRoot = styled(ButtonBase)`
   }
 `;
 
-const MenuItem = React.forwardRef<HTMLDivElement, React.PropsWithChildren<any>>(
-  function Menu(props, ref?) {
-    const { selected, component = 'li', ...other } = props;
-    const classes = useUtilityClasses({ selected });
-    return (
-      <MenuItemRoot className={classes.root} component={component} {...other} />
-    );
-  }
-);
+export interface MenuItemProps {
+  selected?: boolean;
+  children?: React.ReactNode;
+}
+
+const MenuItem = forwardRef<MenuItemProps, 'li'>(function Menu(props, ref?) {
+  const { selected = false, ...other } = props;
+  const classes = useUtilityClasses({ selected });
+  return <MenuItemRoot className={classes.root} component={'li'} {...other} />;
+});
 
 export default MenuItem;

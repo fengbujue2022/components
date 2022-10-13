@@ -1,4 +1,5 @@
 import React, { LabelHTMLAttributes } from 'react';
+import { forwardRef } from '../system';
 import styled from 'styled-components';
 import { useFormControl } from '../FormControl/useFormControl';
 
@@ -32,25 +33,26 @@ const FormLabelRoot = styled.label`
 
 export interface FormLabelProps extends LabelHTMLAttributes<HTMLLabelElement> {}
 
-const FormLabel = React.forwardRef<HTMLLabelElement, FormLabelProps>(
-  function FormLabel(props, ref?) {
-    const { children, ...other } = props;
-    const formControl = useFormControl();
+const FormLabel = forwardRef<FormLabelProps, 'label'>(function FormLabel(
+  props,
+  ref?
+) {
+  const { children, ...other } = props;
+  const formControl = useFormControl();
 
-    const required = formControl?.required ?? false;
+  const required = formControl?.required ?? false;
 
-    let shrink = false;
-    if (formControl) {
-      shrink = formControl.focused || formControl.filled;
-    }
-
-    return (
-      <FormLabelRoot ref={ref} data-shrink={shrink} {...other}>
-        {children}
-        {required && <span>*</span>}
-      </FormLabelRoot>
-    );
+  let shrink = false;
+  if (formControl) {
+    shrink = formControl.focused || formControl.filled;
   }
-);
+
+  return (
+    <FormLabelRoot ref={ref} data-shrink={shrink} {...other}>
+      {children}
+      {required && <span>*</span>}
+    </FormLabelRoot>
+  );
+});
 
 export default FormLabel;

@@ -1,4 +1,5 @@
 import React from 'react';
+import { forwardRef } from '../system';
 import styled from 'styled-components';
 import ButtonBase from '../ButtonBase';
 import { ButtonBaseProps } from '../ButtonBase/ButtonBase';
@@ -18,10 +19,7 @@ const ButtonRoot = styled(ButtonBase)`
     rgba(0, 0, 0, 0.14) 0px 2px 2px 0px, rgba(0, 0, 0, 0.12) 0px 1px 5px;
 `;
 
-const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(function Button(
-  props,
-  ref?
-) {
+const Button = forwardRef<ButtonProps, 'button'>(function Button(props, ref?) {
   const { children, ...other } = props;
 
   return <ButtonRoot {...other}>{children}</ButtonRoot>;

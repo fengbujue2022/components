@@ -4,6 +4,7 @@ import setRef from '../utils/setRef';
 import useForkRef from '../hooks/useForkRef';
 import useEnhancedEffect from '../hooks/useEnhancedEffect';
 import { resolveValue } from '../utils';
+import { forwardRef } from '../system';
 
 type PortalProps = {
   container?: HTMLElement | (() => HTMLElement);
@@ -11,10 +12,7 @@ type PortalProps = {
   children: React.ReactElement;
 };
 
-export default React.forwardRef<Element, PortalProps>(function Portal(
-  props,
-  ref
-) {
+export default forwardRef<PortalProps, any>(function Portal(props, ref) {
   const { children, container, disablePortal = false } = props;
   const [mountNode, setMountNode] = React.useState<Element | null>(null);
   const handleRef = useForkRef(

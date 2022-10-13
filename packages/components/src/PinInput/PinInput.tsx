@@ -4,6 +4,7 @@ import Input from '../Input';
 import getValidChildren from '../utils/getValidChildren';
 import hasValue from '../utils/hasValue';
 import { useControllableState } from '../hooks/useControllableState';
+import { forwardRef } from '../system';
 
 export interface PinInputContextValue {
   getInputProps: (index: number) => {
@@ -16,7 +17,11 @@ export interface PinInputContextValue {
 const PinInputContext = React.createContext<PinInputContextValue | null>(null);
 
 const usePinInputContext = function () {
-  return React.useContext(PinInputContext);
+  const context = React.useContext(PinInputContext);
+  if (!context) {
+    throw Error();
+  }
+  return context;
 };
 
 const toArray = (value?: string) => value?.split('');
@@ -150,15 +155,20 @@ const StyledPinInputField = styled(Input)`
   text-align: center;
 `;
 
-export const PinInputField = React.forwardRef<
-  HTMLInputElement,
-  React.PropsWithChildren<any>
->(function PinInputField(props, ref) {
-  const { index, ...other } = props;
-  const { getInputProps } = usePinInputContext()!;
-  const inputProps = getInputProps(index);
+export interface PinInputFieldProps {}
+interface InjectedPinInputFieldProps {
+  index: number;
+}
 
-  return <StyledPinInputField ref={ref} {...inputProps} {...other} />;
-});
+export const PinInputField = forwardRef<PinInputFieldProps, 'input'>(
+  function PinInputField(props, ref) {
+    const { index, ...other } = props as PinInputFieldProps &
+      InjectedPinInputFieldProps;
+    const { getInputProps } = usePinInputContext();
+    const inputProps = getInputProps(index);
+
+    return <StyledPinInputField ref={ref} {...inputProps} {...other} />;
+  }
+);
 
 export default PinInput;
