@@ -10,4 +10,6 @@ type EasingProp =
       exit?: string | undefined;
     };
 
-type TransitionProps = Omit<OriginalTransitionProps, 'addEndListener'> & {};
+type TransitionProps = Omit<OriginalTransitionProps, 'addEndListener'> & {
+  addEndListener?: EndHandler<HTMLElement>;
+};
