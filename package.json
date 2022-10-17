@@ -25,7 +25,7 @@
     "eslint-config-custom": "workspace:*",
     "prettier": "latest",
     "turbo": "latest",
-    "simple-git-hooks": "2.8.0"
+    "simple-git-hooks": "2.8.1"
   },
   "engines": {
     "npm": ">=7.0.0",
