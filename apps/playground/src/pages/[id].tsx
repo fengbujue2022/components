@@ -49,7 +49,15 @@ const Detail: React.FC = function (props: {}) {
                 overflow: 'hidden',
               }}
             >
-              <Image src={src} width={512} height={512} layout={'responsive'} />
+              <Image
+                src={src}
+                width={200}
+                height={200}
+                alt=""
+                style={{
+                  verticalAlign: 'middle',
+                }}
+              />
             </div>
           </SharedElement>
         </div>

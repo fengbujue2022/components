@@ -23,28 +23,17 @@ const GalleryContainer = styled.div`
   display: flex;
   flex-wrap: wrap;
   flex-direction: row;
-  flex-grow: 1;
   padding: 40px;
 `;
 
 const ImageBox = styled.div`
-  margin: 10px;
   border-radius: 8px;
   overflow: hidden;
   > * {
     vertical-align: middle;
   }
-`;
-
-const HStack = styled.div`
-  display: flex;
-  flex-direction: row;
-  // justify-content: space-between;
-  align-items: center;
-  width: 300;
-  & div {
-    margin-right: 10px;
-  }
+  position: relative;
+  padding-top: 100%;
 `;
 
 const Index = function () {
@@ -58,26 +47,21 @@ const Index = function () {
             console.error('img is null');
           }
           return (
-            <Link key={index} href={`/${index}`}>
-              <div
-                style={{
-                  flexBasis: 100 / girdNumber + '%',
-                  flexGrow: 0,
-                }}
-              >
+            <div
+              style={{
+                flexBasis: 100 / girdNumber + '%',
+                flexGrow: 0,
+                margin: '10px',
+              }}
+            >
+              <Link key={index} href={`/${index}`}>
                 <SharedElement port={generateKey('profile', index)}>
                   <ImageBox>
-                    <Image
-                      src={img}
-                      width={512}
-                      height={512}
-                      layout={'intrinsic'}
-                      alt={'alt'}
-                    />
+                    <Image fill src={img} alt={'alt'} />
                   </ImageBox>
                 </SharedElement>
-              </div>
-            </Link>
+              </Link>
+            </div>
           );
         })}
         <VirtualizedListExample />
@@ -217,7 +201,7 @@ export const ModalExample: React.FC = () => {
 
 const SelectExample: React.FC = () => {
   const [selectValue, setSelectValue] = React.useState('');
-  const handleChange = (event: React.ChangeEvent<any>) => {
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = event.target.value;
     setSelectValue(newValue);
   };
@@ -226,7 +210,7 @@ const SelectExample: React.FC = () => {
     <FormControl>
       <FormLabel>{'Field'}</FormLabel>
       <Select
-        autoFocus
+        // autoFocus
         label="Select"
         value={selectValue}
         onChange={handleChange}
