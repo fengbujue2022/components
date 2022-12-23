@@ -10,7 +10,7 @@
   },
   "devDependencies": {
     "@types/react": "18.0.24",
-    "@types/react-dom": "18.0.8",
+    "@types/react-dom": "18.0.10",
     "@types/react-transition-group": "4.4.5",
     "@types/styled-components": "5.1.26",
     "@vitro/cli": "0.2.5",
