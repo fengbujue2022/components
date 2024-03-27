@@ -17,7 +17,7 @@
   },
   "devDependencies": {
     "@types/node": "18.11.7",
-    "@types/react": "18.0.24",
+    "@types/react": "18.2.73",
     "@types/styled-components": "5.1.26",
     "eslint": "8.26.0",
     "eslint-config-custom": "workspace:*",
